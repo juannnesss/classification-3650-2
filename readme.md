@@ -7,7 +7,7 @@ The challenge contains a directory called **chest_xray_dataset** which includes 
 - The testing data can be found into the **test** folder, this folder contains several images named after it class. The class of each image will be the initial string of the label. 
 
 <p align="center">
-  <img src="./chest_xray_dataset/test/PNEUMONIA_person78_virus_140.jpeg" />
+  <img src="./chest_xray_dataset/test/PNEUMONIA_person126_bacteria_599.jpeg" />
 </p>
 
 ## Context 
@@ -24,7 +24,7 @@ Your model can be written in pytorch, tensorflow, scikit-learn or be written ent
 
 ## Evaluation
 -----
-We will evaluate your code accuraccy against a larger test dataset. The accuracy will measure how many classes where identified as correct with respect to the total number of files. The **Test** dataset use for evaluation has 624 images compared to the one provided in the repository which size has 300 images. Any code that takes longer than 27 min to evalute the entire dataset will be killed and the accuracy will be computed with the images predicted in less than 27 minutes.
+We will evaluate your code accuraccy against a larger test dataset. The accuracy will measure how many classes where identified as correct with respect to the total number of files. The **Test** dataset use for evaluation has 624 images compared to the one provided in the repository which size has 304 images. Any code that takes longer than 27 min to evalute the entire dataset will be killed and the accuracy will be computed with the images predicted in less than 27 minutes.
 
 This repository includes an **eval.py** script that will give an accuracy score (higher is better). You can use it to test your solutions against the labeled examples. We will use this same script to evaluate your solution.
 
@@ -33,7 +33,7 @@ This repository includes an **eval.py** script that will give an accuracy score 
 Hints
 ------
 - We have computed result with accuracies higher than 90% on the **Train** set. You can aim to get results with this score. 
-- The highest accuracy we have reache for the **Test** is 82.37%.
+- The highest accuracy we have reache for the **Test** is 82.37% and in the ligth version you see on Github 89.77%.
 - Some images are purely black & white, you need to convert them to a standard number of channels to work on your model. (Recommended: Use the three color channels to parse info into your model)
 - Normalize all the images before parsing into your model, images can have different shapes.
 - The training dataset is fairly balanced and the images are highly detailed. Therefore we advice to spend more time on the model rather than preprocessing it.
