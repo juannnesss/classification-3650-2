@@ -7,7 +7,7 @@ The challenge contains a directory called **chest_xray_dataset** which includes 
 - The testing data can be found into the **test** folder, this folder contains several images named after it class. The class of each image will be the initial string of the label. 
 
 <p align="center">
-  <img src="./chest_xray_dataset/test/PNEUMONIA_person1668_virus_2882.jpeg" />
+  <img src="./chest_xray_dataset/test/PNEUMONIA_person78_virus_140.jpeg" />
 </p>
 
 ## Context 
