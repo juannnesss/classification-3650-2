@@ -64,6 +64,7 @@ conda env create --file=~/Downloads/enviroment.yml --name=apple_tensorflow
 ```bash
 projectname=$(basename "$PWD")-env
 python -m venv $(basename "$PWD")-env
+python3 -m venv $(basename "$PWD")-env
 ```
 
 ```bash

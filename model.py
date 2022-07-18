@@ -125,6 +125,9 @@ class Model():
         return new_tensor
     
     def train(self):
+        ## check for valid folder
+        if not os.path.exists(self.valid_path):
+            os.mkdir(self.valid_path)
         (train_im_n, train_im_p), (valid_im_n, valid_im_p), (test_im_n, test_im_p) = self.check_ims_in_folder(self.labels)
         train_dir = tf.keras.preprocessing.image_dataset_from_directory(self.train_path, 
                                                                 image_size=self.target_size, 
