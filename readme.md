@@ -62,13 +62,15 @@ conda env create --file=~/Downloads/enviroment.yml --name=apple_tensorflow
 ##### prior INSIDE REPOSITORY
 
 ```bash
-projectname=$(basename "$PWD")-env
-python -m venv $(basename "$PWD")-env
-python3 -m venv $(basename "$PWD")-env
+projectname=$(basename "$PWD")
+
+python -m venv $projectname-env
+# ubtuntu
+python3 -m venv $projectname-env
 ```
 
 ```bash
-source $projectname/bin/activate
+source $projectname-env/bin/activate
 ```
 
 ```bash
@@ -78,6 +80,6 @@ pip install ipykernel
 ```bash
 #visual studio tweak
 python -m ipykernel install --user --name=$projectname
-```
 
 ## Steps to run
+```
