@@ -5,3 +5,5 @@ classi
 inception_resnet_v2_weights_tf_dim_ordering_tf_kernels_notop.h5
 *.h5
 .ipynb*
+chest_xray_dataset/*
+__pycache__/modelUPD.cpython-38.pyc

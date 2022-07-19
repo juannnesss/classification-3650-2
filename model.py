@@ -1,3 +1,4 @@
+from ast import In
 import matplotlib.pyplot as plt
 import numpy as np 
 import pandas as pd 
@@ -7,6 +8,7 @@ import os, time, random
 import tensorflow as tf
 from PIL import Image
 from skimage import io
+import shutil
 
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 
@@ -28,10 +30,11 @@ from tensorflow.keras import layers
 
     
 class Model():
+    isTrained = False
     dir_path ="./chest_xray_dataset/"
     train_path = dir_path+'train/'
     valid_path = dir_path+'val/'
-    test_path = dir_path+'test/'
+    test_path = dir_path+'testNew/'
     label_dict={'NORMAL':0,'PNEUMONIA':1}
 
     #The sizes of the images vary over a wide range. So best option is to fix a size for all.
@@ -44,28 +47,58 @@ class Model():
     test_dir = None
 
     batch_size = 64
+    labels = ['NORMAL', 'PNEUMONIA']
+
+    ## interal variables should be initiated
+    vModel = None
+    reduce_lr = None
+    history = None
+    train_data_batches = None
+    valid_data_batches = None
+    mcp_save = None
+    es= None
+    reduce_lr = None
+
     def __init__(self):
         # class initialization method
         self.temp = 0
-        print("Hello, train done")
-        self.train()
+         # check for best_model_weights.h5
+        if not os.path.exists(self.dir_path+'testNew/'):
+            os.mkdir(self.dir_path+'testNew/')
+            self.create_file_system(self.dir_path+'testNew/', self.labels)
+        if os.path.exists('best_model_weights.h5'):
+            self.isTrained = True
+        else:
+            self.isTrained = False
+        self.initialSetup()
     
     ### check number of train, valid and test images 
-    labels = ['NORMAL', 'PNEUMONIA']
+    
+    ## method to re-create original test file system
+    def recreate_test_file_system(self, new_folder):
+        if not os.path.exists(new_folder):
+            os.mkdir(new_folder)
+        normal_test_img = os.listdir(self.test_path+self.labels[0]+'/') 
+        pneumonia_test_img = os.listdir(self.test_path+self.labels[1]+'/')
+
+        for im in normal_test_img:
+            os.rename(self.test_path+self.labels[0]+'/'+ im, new_folder+im)
+        for im in pneumonia_test_img:
+            os.rename(self.test_path+self.labels[1]+'/'+ im, new_folder+im)
     ## method to create file systenm structure for the code to work
     ## run when some file systems breaks
     def create_file_system(self,folder,labels):
-        ## list items
-        items = os.listdir(folder)
+        ## list items from test folder
+        items = os.listdir(self.dir_path+'test/')
         if not os.path.exists(folder+labels[0]+"/"):
             os.mkdir(folder+labels[0]+"/")
         if not os.path.exists(folder+labels[1]+"/"):
             os.mkdir(folder+labels[1]+"/")
         for item in items:
             if self.contains(item, labels[0]):
-                os.rename(folder+item, folder+labels[0]+"/"+item)
+                shutil.copyfile(self.dir_path+'test/'+item, folder+labels[0]+"/"+item)
             elif self.contains(item, labels[1]):
-                os.rename(folder+item, folder+labels[1]+"/"+item)
+                shutil.copyfile(self.dir_path+'test/'+item, folder+labels[1]+"/"+item)
             else:
                 print('error')
     def contains(self,file_name, label):
@@ -124,7 +157,7 @@ class Model():
         new_tensor = (tensor-tensor_mean)/tensor_std
         return new_tensor
     
-    def train(self):
+    def initialSetup(self):
         ## check for valid folder
         if not os.path.exists(self.valid_path):
             os.mkdir(self.valid_path)
@@ -180,21 +213,21 @@ class Model():
           layers.experimental.preprocessing.RandomZoom(0.1)
         ])
         autotune = tf.data.AUTOTUNE ### most important function for speed up training
-        train_data_batches = train_ds.cache().prefetch(buffer_size=autotune)
-        valid_data_batches = val_ds.cache().prefetch(buffer_size=autotune)
+        self.train_data_batches = train_ds.cache().prefetch(buffer_size=autotune)
+        self.valid_data_batches = val_ds.cache().prefetch(buffer_size=autotune)
         test_data_batches = test_dir.cache().prefetch(buffer_size=autotune)
         #### check the numbers again
-        print (train_data_batches, valid_data_batches)
+        print (self.train_data_batches, self.valid_data_batches)
 
-        num_elements_train_data_batches = tf.data.experimental.cardinality(train_data_batches).numpy()
+        num_elements_train_data_batches = tf.data.experimental.cardinality(self.train_data_batches).numpy()
         print (num_elements_train_data_batches)
-        reduce_lr = ReduceLROnPlateau(monitor='val_loss',  factor=0.2, patience=3, min_lr=1e-8, verbose=1)
+        self.reduce_lr = ReduceLROnPlateau(monitor='val_loss',  factor=0.2, patience=3, min_lr=1e-8, verbose=1)
 
-        mcp_save = ModelCheckpoint(filepath="best_model_weights.h5",
+        self.mcp_save = ModelCheckpoint(filepath="best_model_weights.h5",
                            save_best_only=True, save_weights_only=True, monitor='val_loss', mode='min')
 
         ##restore best weights added after 2nd training
-        es = EarlyStopping(monitor="val_loss", patience=10, restore_best_weights=True)
+        self.es = EarlyStopping(monitor="val_loss", patience=10, restore_best_weights=True)
 
         ### added after 2nd training 
 
@@ -297,23 +330,44 @@ class Model():
 
 
             return model
-        model = build_model()
-        model.summary()
+        self.vModel = build_model()
+        self.vModel.summary()
+        if self.isTrained:
+            self.vModel.load_weights("best_model_weights.h5")
+        else:
+            self.train()
+
+
+       
+    def train(self):
         start_time = time.time()
         with tf.device("/gpu:0"):
-            history = model.fit(train_data_batches, 
-                            epochs=100, 
-                            validation_data=valid_data_batches,
-                            callbacks=[mcp_save, es, reduce_lr])
+            self.history = self.vModel.fit(self.train_data_batches, 
+                epochs=100, 
+                validation_data=self.valid_data_batches,
+                callbacks=[self.mcp_save, self.es, self.reduce_lr])
 
         end_time = time.time()
         print ('total time taken: in Minutes', (end_time-start_time)/60.)
+        print("Hello, train done")
+    
 
 
-
-    def predict(file_path):
+    def predict(self,file_path)->int:
     #methid to predict the output
-        print("prediction")
+        #print("prediction isTrained", self.isTrained, file_path)
+        image = tf.keras.preprocessing.image.load_img(path=file_path , color_mode='grayscale',target_size=(300,300))
+        input_arr = tf.keras.preprocessing.image.img_to_array(image )
+        input_arr = np.array([input_arr]) 
+        y_pred_batch = self.vModel.predict(input_arr)
+        y_pred_75th = (y_pred_batch > 0.75).astype(np.uint8)
+        #print("y_pred_75th", y_pred_75th)
+        pre_value = y_pred_75th[0].astype("uint8")[0]
+        #print("prediction value", pre_value)
+        predicted_label = self.labels[pre_value]
+        #print("predicted label", predicted_label)
+
+        return pre_value
     
 
 class customCallbacks(tf.keras.callbacks.Callback):
@@ -324,4 +378,4 @@ class customCallbacks(tf.keras.callbacks.Callback):
           'epoch num {}, train loss: {}, validation loss: {}'.format(epoch, logs['loss'], logs['val_loss']))
 
 
-ModelTest = Model()
+
